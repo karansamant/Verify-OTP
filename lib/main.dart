@@ -17,6 +17,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (context) => VerifyOtpNotifier()),
       ],
       child: MaterialApp(
+        debugShowCheckedModeBanner: false,
         title: 'OTP App',
         theme: ThemeData(
           primarySwatch: Colors.blue,

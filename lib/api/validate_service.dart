@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
-class VerifyService {
+class ValidateService {
   static const apiUrl =
       "https://wsdeh.blinkx.in/Middleware/User/ValidateMobile";
   static const apiKey = "N0z4s32hyZXSZt1m";

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:otp_app/screens/success_screen.dart';
+import 'package:pin_code_fields/pin_code_fields.dart';
 import 'package:provider/provider.dart';
 
 import '../api/resend_service.dart';
@@ -21,7 +22,7 @@ class SecondScreen extends StatefulWidget {
 class _SecondScreenState extends State<SecondScreen> {
   late VerifyOtpNotifier verifyOtpNotifier;
   bool isResendButtonTappable = false;
-  int countdown = 60;
+  int countdown = 30;
   late Timer timer;
 
   @override
@@ -50,7 +51,7 @@ class _SecondScreenState extends State<SecondScreen> {
     await verifyOtpNotifier.resendOtp(otpData: widget.otpData);
     if (verifyOtpNotifier.resendStatus == ResendOtpRequestStatus.success) {
       setState(() {
-        countdown = 60;
+        countdown = 30;
         isResendButtonTappable = false;
       });
       startCountdown();
@@ -73,44 +74,141 @@ class _SecondScreenState extends State<SecondScreen> {
 
   @override
   void dispose() {
-    timer.cancel(); // Cancel the timer to prevent memory leaks
+    timer.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('OTP App - Screen 2'),
-      ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              TextField(
-                controller: verifyOtpNotifier.otpController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: 'Enter OTP',
+      body: SingleChildScrollView(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header Row
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    IconButton(
+                      icon: const Icon(
+                        Icons.arrow_back,
+                        size: 28,
+                      ),
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                    ),
+                    Image.asset(
+                      'image/blinkXLogoLight.png',
+                      width: 125,
+                      height: 125,
+                    ),
+                  ],
                 ),
-              ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: verifyOtpAndMoveToThirdScreen,
-                child: Text('Verify OTP and Proceed'),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: isResendButtonTappable ? resendOtp : null,
-                child: Text(
-                  isResendButtonTappable
-                      ? 'Resend OTP'
-                      : 'Resend OTP ($countdown s)',
+                const SizedBox(height: 60),
+                const Center(
+                  child: Text(
+                    'Verify Mobile',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 10),
+                Center(
+                  child: Text(
+                    'Enter the OTP sent on ${widget.otpData.mobileNumber}',
+                    style: const TextStyle(
+                      fontSize: 16,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                const SizedBox(height: 40),
+
+                Padding(
+                  padding: const EdgeInsets.all(10.0),
+                  child: Column(
+                    children: [
+                      PinCodeTextField(
+                        appContext: context,
+                        length: 6, // Number of OTP digits
+                        keyboardType: TextInputType.number,
+                        pinTheme: PinTheme(
+                          shape: PinCodeFieldShape.box,
+                          borderRadius: BorderRadius.circular(20),
+                          fieldHeight: 55,
+                          fieldWidth: 55,
+                          inactiveColor: Colors.black,
+                          activeColor: Colors.blue,
+                        ),
+                        onChanged: (pin) {
+                          // Handle OTP input changes
+                        },
+                      ),
+                      const SizedBox(height: 60),
+
+                      // Verify OTP Button
+
+                      Container(
+                        child: Column(
+                          children: [
+                            GestureDetector(
+                              onTap: () {
+                                if (isResendButtonTappable) {
+                                  resendOtp();
+                                }
+                              },
+                              child: Text(
+                                isResendButtonTappable
+                                    ? 'Resend OTP'
+                                    : 'Resend OTP in ${countdown}s',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: isResendButtonTappable
+                                      ? Colors.blue
+                                      : Colors.black,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(
+                              height: 10,
+                            ),
+                            GestureDetector(
+                              onTap: verifyOtpAndMoveToThirdScreen,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.blue,
+                                  borderRadius: BorderRadius.circular(50),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 15,
+                                  horizontal: 20,
+                                ),
+                                child: const Center(
+                                  child: Text(
+                                    'Verify OTP',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
