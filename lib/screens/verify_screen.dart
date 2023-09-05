@@ -1,14 +1,16 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:otp_app/model/otp_model.dart';
 import 'package:otp_app/screens/success_screen.dart';
+import 'package:provider/provider.dart';
 
 import '../api/resend_service.dart';
 import '../api/verify_service.dart';
+import '../model/otp_model.dart';
+import '../provider/verify_otp_notifier.dart';
 
 class SecondScreen extends StatefulWidget {
-  final OtpData otpData;
+  final OtpDataModel otpData;
 
   SecondScreen({required this.otpData});
 
@@ -17,7 +19,7 @@ class SecondScreen extends StatefulWidget {
 }
 
 class _SecondScreenState extends State<SecondScreen> {
-  final otpController = TextEditingController();
+  late VerifyOtpNotifier verifyOtpNotifier;
   bool isResendButtonTappable = false;
   int countdown = 60;
   late Timer timer;
@@ -25,6 +27,7 @@ class _SecondScreenState extends State<SecondScreen> {
   @override
   void initState() {
     super.initState();
+    verifyOtpNotifier = Provider.of<VerifyOtpNotifier>(context, listen: false);
     startCountdown();
   }
 
@@ -44,35 +47,28 @@ class _SecondScreenState extends State<SecondScreen> {
   }
 
   Future<void> resendOtp() async {
-    ResendService.resendOtp(
-      otpData: widget.otpData,
-      onSuccess: () {
-        setState(() {
-          countdown = 60;
-          isResendButtonTappable = false;
-        });
-        startCountdown();
-      },
-      onError: () {
-        // Handle API error
-      },
-    );
+    await verifyOtpNotifier.resendOtp(otpData: widget.otpData);
+    if (verifyOtpNotifier.resendStatus == ResendOtpRequestStatus.success) {
+      setState(() {
+        countdown = 60;
+        isResendButtonTappable = false;
+      });
+      startCountdown();
+    } else {
+      // Handle error
+    }
   }
 
   Future<void> verifyOtpAndMoveToThirdScreen() async {
-    VerifyService.verifyOtp(
-      otpData: widget.otpData,
-      otp: otpController.text,
-      onSuccess: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => SuccessScreen()),
-        );
-      },
-      onError: () {
-        // Handle API error
-      },
-    );
+    await verifyOtpNotifier.verifyOtp(otpData: widget.otpData);
+    if (verifyOtpNotifier.verifyStatus == VerifyOtpRequestStatus.success) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => SuccessScreen()),
+      );
+    } else {
+      // Handle error
+    }
   }
 
   @override
@@ -94,7 +90,7 @@ class _SecondScreenState extends State<SecondScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               TextField(
-                controller: otpController,
+                controller: verifyOtpNotifier.otpController,
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
                   labelText: 'Enter OTP',
