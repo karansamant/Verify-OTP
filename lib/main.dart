@@ -1,6 +1,8 @@
-// main.dart
 import 'package:flutter/material.dart';
+import 'package:otp_app/provider/send_otp_notifier.dart';
+import 'package:otp_app/provider/verify_otp_notifier.dart';
 import 'package:otp_app/screens/validate_screen.dart';
+import 'package:provider/provider.dart';
 
 void main() {
   runApp(MyApp());
@@ -9,12 +11,18 @@ void main() {
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'OTP App',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => SendOtpNotifier()),
+        ChangeNotifierProvider(create: (context) => VerifyOtpNotifier()),
+      ],
+      child: MaterialApp(
+        title: 'OTP App',
+        theme: ThemeData(
+          primarySwatch: Colors.blue,
+        ),
+        home: FirstScreen(),
       ),
-      home: FirstScreen(),
     );
   }
 }

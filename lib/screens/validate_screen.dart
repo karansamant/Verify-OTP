@@ -1,35 +1,16 @@
-// first_screen.dart
 import 'package:flutter/material.dart';
 import 'package:otp_app/screens/verify_screen.dart';
+import 'package:provider/provider.dart';
 
-import '../api/validate_service.dart';
+import '../provider/send_otp_notifier.dart';
 
-class FirstScreen extends StatefulWidget {
-  const FirstScreen({super.key});
-
-  @override
-  _FirstScreenState createState() => _FirstScreenState();
-}
-
-class _FirstScreenState extends State<FirstScreen> {
-  final mobileNumberController = TextEditingController();
-
-  void navigateToSecondScreen() async {
-    final otpData = await sendOtpRequest(mobileNumberController.text);
-    if (otpData != null) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => SecondScreen(otpData: otpData),
-        ),
-      );
-    } else {
-      // Handle API error
-    }
-  }
+class FirstScreen extends StatelessWidget {
+  const FirstScreen({Key? key});
 
   @override
   Widget build(BuildContext context) {
+    final sendOtpNotifier = Provider.of<SendOtpNotifier>(context);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('OTP App - Screen 1'),
@@ -41,7 +22,7 @@ class _FirstScreenState extends State<FirstScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               TextField(
-                controller: mobileNumberController,
+                controller: sendOtpNotifier.mobileNumberController,
                 keyboardType: TextInputType.phone,
                 decoration: const InputDecoration(
                   labelText: 'Enter Mobile Number',
@@ -49,8 +30,24 @@ class _FirstScreenState extends State<FirstScreen> {
               ),
               const SizedBox(height: 20),
               ElevatedButton(
-                onPressed: navigateToSecondScreen,
-                child: const Text('Send OTP'),
+                onPressed: () async {
+                  final otpData = await sendOtpNotifier.sendOtpRequest();
+                  if (otpData != null) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SecondScreen(otpData: otpData),
+                      ),
+                    );
+                  } else {
+                    // Handle error
+                  }
+                },
+                child: Text(
+                  sendOtpNotifier.status == SendOtpRequestStatus.loading
+                      ? 'Sending OTP...'
+                      : 'Send OTP',
+                ),
               ),
             ],
           ),

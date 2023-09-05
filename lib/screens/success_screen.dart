@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class SuccessScreen extends StatelessWidget {
-  const SuccessScreen({super.key});
+  const SuccessScreen({Key? key});
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +29,6 @@ class SuccessScreen extends StatelessWidget {
             const SizedBox(height: 20.0),
             ElevatedButton(
               onPressed: () {
-                // Navigate back to the first screen or any other action you want to perform.
                 Navigator.pop(context);
               },
               child: const Text('Back to Home'),
