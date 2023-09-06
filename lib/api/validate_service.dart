@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
-class VerifyService {
+class ValidateService {
   static const apiUrl =
       "https://wsdeh.blinkx.in/Middleware/User/ValidateMobile";
   static const apiKey = "N0z4s32hyZXSZt1m";
@@ -27,6 +27,7 @@ class VerifyService {
 
       if (response.statusCode == 200) {
         final jsonResponse = json.decode(response.body);
+
         if (jsonResponse != null &&
             jsonResponse is Map<String, dynamic> &&
             jsonResponse['data'] != null) {
