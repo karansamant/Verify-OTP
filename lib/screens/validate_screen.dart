@@ -88,7 +88,7 @@ class FirstScreen extends StatelessWidget {
                 ],
               ),
             ),
-            const Spacer(), // Push everything above to the top
+            const Spacer(),
             Padding(
               padding: const EdgeInsets.all(12.0),
               child: GestureDetector(

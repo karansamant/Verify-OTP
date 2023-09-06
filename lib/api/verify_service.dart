@@ -5,17 +5,15 @@ import 'package:http/http.dart' as http;
 
 import '../model/otp_model.dart';
 
-enum VerifyOtpRequestStatus { initial, loading, success, error }
-
 class VerifyOtpApiService {
   static const apiUrl = "https://wsdeh.blinkx.in/Middleware/User/VerifyOTP";
   static const apiKey = "N0z4s32hyZXSZt1m";
   static const hashKey = 'm4tJ9zuX3hau7k6LBJ4Nn6PFZO69uiiN';
 
-  static Future<void> verifyOtp(
-      {required OtpDataModel otpData, required String otp}) async {
-    VerifyOtpRequestStatus verifyStatus = VerifyOtpRequestStatus.initial;
-
+  static Future<bool> verifyOtp({
+    required OtpDataModel otpData,
+    required String otp,
+  }) async {
     try {
       final input = "${otpData.requestToken}:$hashKey";
       final hash = md5.convert(utf8.encode(input)).toString();
@@ -37,15 +35,20 @@ class VerifyOtpApiService {
       );
 
       if (response.statusCode == 200) {
-        print("Verify OTP API Response: ${response.body}");
-        verifyStatus = VerifyOtpRequestStatus.success;
+        final jsonResponse = jsonDecode(response.body);
+        final status = jsonResponse['status'];
+
+        if (status == 'success') {
+          return true;
+        } else {
+          return false;
+        }
       } else {
-        print("Verify OTP API Error: ${response.statusCode}");
-        verifyStatus = VerifyOtpRequestStatus.error;
+        return false;
       }
     } catch (e) {
       print("Verify OTP API Error: $e");
-      verifyStatus = VerifyOtpRequestStatus.error;
+      return false;
     }
   }
 }

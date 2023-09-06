@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:otp_app/screens/success_screen.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 import 'package:provider/provider.dart';
@@ -13,7 +14,7 @@ import '../provider/verify_otp_notifier.dart';
 class SecondScreen extends StatefulWidget {
   final OtpDataModel otpData;
 
-  SecondScreen({required this.otpData});
+  const SecondScreen({super.key, required this.otpData});
 
   @override
   _SecondScreenState createState() => _SecondScreenState();
@@ -24,6 +25,8 @@ class _SecondScreenState extends State<SecondScreen> {
   bool isResendButtonTappable = false;
   int countdown = 30;
   late Timer timer;
+  String enteredOTP = '';
+  bool otpMismatch = false;
 
   @override
   void initState() {
@@ -61,154 +64,193 @@ class _SecondScreenState extends State<SecondScreen> {
   }
 
   Future<void> verifyOtpAndMoveToThirdScreen() async {
-    await verifyOtpNotifier.verifyOtp(otpData: widget.otpData);
-    if (verifyOtpNotifier.verifyStatus == VerifyOtpRequestStatus.success) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => SuccessScreen()),
-      );
+    if (verifyOtpNotifier.verifyStatus == VerifyOtpRequestStatus.loading) {
+      // You can show a loading indicator here if needed
     } else {
-      // Handle error
-    }
-  }
+      final otp = enteredOTP; // Use the entered OTP
+      final success = await VerifyOtpApiService.verifyOtp(
+        otpData: widget.otpData,
+        otp: otp,
+      );
 
-  @override
-  void dispose() {
-    timer.cancel();
-    super.dispose();
+      if (success) {
+        // Navigate to the SuccessScreen when OTP verification is successful
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => SuccessScreen()),
+        );
+      } else {
+        otpMismatch = true;
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SingleChildScrollView(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header Row
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    IconButton(
-                      icon: const Icon(
-                        Icons.arrow_back,
-                        size: 28,
-                      ),
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header Row
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  IconButton(
+                    icon: const Icon(
+                      Icons.arrow_back,
+                      size: 28,
                     ),
-                    Image.asset(
-                      'image/blinkXLogoLight.png',
-                      width: 125,
-                      height: 125,
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                  ),
+                  Image.asset(
+                    'image/blinkXLogoLight.png',
+                    width: 125,
+                    height: 125,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 60),
+
+              const Center(
+                child: Text(
+                  'Verify Mobile',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Center(
+                child: Text(
+                  'Enter the OTP sent on ${widget.otpData.mobileNumber}',
+                  style: const TextStyle(
+                    fontSize: 16,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: 40),
+
+              Padding(
+                padding: const EdgeInsets.all(10.0),
+                child: Column(
+                  children: [
+                    PinCodeTextField(
+                      appContext: context,
+                      length: 6, // Number of OTP digits
+                      keyboardType: TextInputType.number,
+                      pinTheme: PinTheme(
+                        shape: PinCodeFieldShape.box,
+                        borderRadius: BorderRadius.circular(20),
+                        fieldHeight: 55,
+                        fieldWidth: 55,
+                        inactiveColor: Colors.black,
+                        activeColor: Colors.blue,
+                      ),
+                      inputFormatters: <TextInputFormatter>[
+                        FilteringTextInputFormatter
+                            .digitsOnly, // Allow only digits
+                      ],
+                      onChanged: (pin) {
+                        // Update the entered OTP
+                        enteredOTP = pin;
+                      },
+                      onCompleted: (pin) {
+                        // Handle OTP input completion
+                        verifyOtpAndMoveToThirdScreen();
+                      },
                     ),
                   ],
                 ),
-                const SizedBox(height: 60),
-                const Center(
-                  child: Text(
-                    'Verify Mobile',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Center(
-                  child: Text(
-                    'Enter the OTP sent on ${widget.otpData.mobileNumber}',
-                    style: const TextStyle(
-                      fontSize: 16,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                const SizedBox(height: 40),
-
-                Padding(
-                  padding: const EdgeInsets.all(10.0),
-                  child: Column(
-                    children: [
-                      PinCodeTextField(
-                        appContext: context,
-                        length: 6, // Number of OTP digits
-                        keyboardType: TextInputType.number,
-                        pinTheme: PinTheme(
-                          shape: PinCodeFieldShape.box,
-                          borderRadius: BorderRadius.circular(20),
-                          fieldHeight: 55,
-                          fieldWidth: 55,
-                          inactiveColor: Colors.black,
-                          activeColor: Colors.blue,
+              ),
+              const SizedBox(height: 20),
+              // Error message text (wrapped in a Visibility widget)
+              Center(
+                child: Visibility(
+                  visible:
+                      otpMismatch, // Show the text only if OTPmismatch is true
+                  child: Builder(
+                    builder: (BuildContext context) {
+                      if (otpMismatch) {
+                        WidgetsBinding.instance!.addPostFrameCallback((_) {
+                          // Trigger an immediate rebuild of the widget tree
+                          setState(() {});
+                        });
+                      }
+                      return const Text(
+                        'OTP entered does not match with generated OTP.',
+                        style: TextStyle(
+                          color: Colors.red, // Set text color to red for errors
+                          fontSize: 16,
                         ),
-                        onChanged: (pin) {
-                          // Handle OTP input changes
+                      );
+                    },
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Center(
+                      child: GestureDetector(
+                        onTap: () {
+                          if (isResendButtonTappable) {
+                            resendOtp();
+                          }
                         },
-                      ),
-                      const SizedBox(height: 60),
-
-                      // Verify OTP Button
-
-                      Container(
-                        child: Column(
-                          children: [
-                            GestureDetector(
-                              onTap: () {
-                                if (isResendButtonTappable) {
-                                  resendOtp();
-                                }
-                              },
-                              child: Text(
-                                isResendButtonTappable
-                                    ? 'Resend OTP'
-                                    : 'Resend OTP in ${countdown}s',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: isResendButtonTappable
-                                      ? Colors.blue
-                                      : Colors.black,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(
-                              height: 10,
-                            ),
-                            GestureDetector(
-                              onTap: verifyOtpAndMoveToThirdScreen,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.blue,
-                                  borderRadius: BorderRadius.circular(50),
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 15,
-                                  horizontal: 20,
-                                ),
-                                child: const Center(
-                                  child: Text(
-                                    'Verify OTP',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
+                        child: Text(
+                          isResendButtonTappable
+                              ? 'Resend OTP'
+                              : 'Resend OTP in ${countdown}s',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: isResendButtonTappable
+                                ? Colors.blue
+                                : Colors.black,
+                          ),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(
+                      height: 10,
+                    ),
+                    GestureDetector(
+                      onTap: verifyOtpAndMoveToThirdScreen,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.blue,
+                          borderRadius: BorderRadius.circular(50),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 15,
+                          horizontal: 20,
+                        ),
+                        child: const Center(
+                          child: Text(
+                            'Verify OTP',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(
+                      height: 20,
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

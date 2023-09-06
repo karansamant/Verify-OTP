@@ -27,6 +27,7 @@ class ValidateService {
 
       if (response.statusCode == 200) {
         final jsonResponse = json.decode(response.body);
+
         if (jsonResponse != null &&
             jsonResponse is Map<String, dynamic> &&
             jsonResponse['data'] != null) {

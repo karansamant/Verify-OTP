@@ -23,6 +23,8 @@ class SendOtpNotifier extends ChangeNotifier {
 
       if (response != null) {
         final requestToken = response['requestToken'] as String?;
+        print("this is request token");
+        print(requestToken);
         if (requestToken != null) {
           status = SendOtpRequestStatus.success;
           otpData = OtpDataModel(
